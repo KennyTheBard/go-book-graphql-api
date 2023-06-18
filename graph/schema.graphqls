@@ -1,0 +1,39 @@
+
+scalar Date
+
+type Book {
+  id: ID!
+  title: String!
+  author: Author!
+  publishDate: Date!
+}
+
+type Author {
+  id: ID!
+  name: String!
+  dateOfBirth: Date!
+}
+
+type Query {
+  books: [Book!]!
+  bookById: Book
+  authors: [Author!]
+  authorById: Author!
+}
+
+input NewBook {
+  title: String!
+  authorId: ID!
+  publishDate: Date!
+}
+
+
+input NewAuthor {
+  name: String!
+  dateOfBirth: Date!
+}
+
+type Mutation {
+  createBook(input: NewBook!): Book!
+  createAuthor(input: NewAuthor!): Author!
+}
