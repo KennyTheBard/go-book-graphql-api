@@ -7,18 +7,27 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/KennyTheBard/go-books-graphql-api/db"
 	"github.com/KennyTheBard/go-books-graphql-api/graph"
 )
 
 const defaultPort = "8080"
 
 func main() {
+	// database connection
+	db, err := db.InitDatabaseConnection()
+	if err != nil {
+		panic(err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		DB: db,
+	}}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

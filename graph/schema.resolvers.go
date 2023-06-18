@@ -7,18 +7,66 @@ package graph
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/KennyTheBard/go-books-graphql-api/db"
 	"github.com/KennyTheBard/go-books-graphql-api/graph/model"
+	"github.com/KennyTheBard/go-books-graphql-api/utils"
 )
 
 // CreateBook is the resolver for the createBook field.
 func (r *mutationResolver) CreateBook(ctx context.Context, input model.NewBook) (*model.Book, error) {
-	panic(fmt.Errorf("not implemented: CreateBook - createBook"))
+	publishDate, err := time.Parse(utils.JavascriptDateTimeFormat, input.PublishDate)
+	if err != nil {
+		return nil, err
+	}
+
+	var author db.Author
+	if err = r.DB.First(&author, input.AuthorID).Error; err != nil {
+		return nil, err
+	}
+
+	book := &db.Book{
+		Title:       input.Title,
+		AuthorID:    input.AuthorID,
+		PublishDate: publishDate,
+	}
+	if err = r.DB.Create(book).Error; err != nil {
+		return nil, err
+	}
+
+	return &model.Book{
+		ID:    book.ID,
+		Title: book.Title,
+		Author: &model.Author{
+			ID:          author.ID,
+			Name:        author.Name,
+			DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+		},
+		PublishDate: book.PublishDate.Format(utils.JavascriptDateTimeFormat),
+	}, nil
 }
 
 // CreateAuthor is the resolver for the createAuthor field.
 func (r *mutationResolver) CreateAuthor(ctx context.Context, input model.NewAuthor) (*model.Author, error) {
-	panic(fmt.Errorf("not implemented: CreateAuthor - createAuthor"))
+	dateOfBirth, err := time.Parse(utils.JavascriptDateTimeFormat, input.DateOfBirth)
+	if err != nil {
+		return nil, err
+	}
+
+	author := &db.Author{
+		Name:        input.Name,
+		DateOfBirth: dateOfBirth,
+	}
+	if err = r.DB.Create(author).Error; err != nil {
+		return nil, err
+	}
+
+	return &model.Author{
+		ID:          author.ID,
+		Name:        author.Name,
+		DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+	}, nil
 }
 
 // Books is the resolver for the books field.

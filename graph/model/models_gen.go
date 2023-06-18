@@ -3,13 +3,13 @@
 package model
 
 type Author struct {
-	ID          string `json:"id"`
+	ID          int    `json:"id"`
 	Name        string `json:"name"`
 	DateOfBirth string `json:"dateOfBirth"`
 }
 
 type Book struct {
-	ID          string  `json:"id"`
+	ID          int     `json:"id"`
 	Title       string  `json:"title"`
 	Author      *Author `json:"author"`
 	PublishDate string  `json:"publishDate"`
@@ -22,6 +22,6 @@ type NewAuthor struct {
 
 type NewBook struct {
 	Title       string `json:"title"`
-	AuthorID    string `json:"authorId"`
+	AuthorID    int    `json:"authorId"`
 	PublishDate string `json:"publishDate"`
 }
