@@ -64,9 +64,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		AuthorByID func(childComplexity int) int
+		AuthorByID func(childComplexity int, id int) int
 		Authors    func(childComplexity int) int
-		BookByID   func(childComplexity int) int
+		BookByID   func(childComplexity int, id int) int
 		Books      func(childComplexity int) int
 	}
 }
@@ -77,9 +77,9 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Books(ctx context.Context) ([]*model.Book, error)
-	BookByID(ctx context.Context) (*model.Book, error)
+	BookByID(ctx context.Context, id int) (*model.Book, error)
 	Authors(ctx context.Context) ([]*model.Author, error)
-	AuthorByID(ctx context.Context) (*model.Author, error)
+	AuthorByID(ctx context.Context, id int) (*model.Author, error)
 }
 
 type executableSchema struct {
@@ -175,7 +175,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.AuthorByID(childComplexity), true
+		args, err := ec.field_Query_authorById_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.AuthorByID(childComplexity, args["id"].(int)), true
 
 	case "Query.authors":
 		if e.complexity.Query.Authors == nil {
@@ -189,7 +194,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.BookByID(childComplexity), true
+		args, err := ec.field_Query_bookById_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.BookByID(childComplexity, args["id"].(int)), true
 
 	case "Query.books":
 		if e.complexity.Query.Books == nil {
@@ -366,6 +376,36 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_authorById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_bookById_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 int
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -919,7 +959,7 @@ func (ec *executionContext) _Query_bookById(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().BookByID(rctx)
+		return ec.resolvers.Query().BookByID(rctx, fc.Args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -952,6 +992,17 @@ func (ec *executionContext) fieldContext_Query_bookById(ctx context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Book", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_bookById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1019,21 +1070,18 @@ func (ec *executionContext) _Query_authorById(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().AuthorByID(rctx)
+		return ec.resolvers.Query().AuthorByID(rctx, fc.Args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Author)
 	fc.Result = res
-	return ec.marshalNAuthor2ᚖgithubᚗcomᚋKennyTheBardᚋgoᚑbooksᚑgraphqlᚑapiᚋgraphᚋmodelᚐAuthor(ctx, field.Selections, res)
+	return ec.marshalOAuthor2ᚖgithubᚗcomᚋKennyTheBardᚋgoᚑbooksᚑgraphqlᚑapiᚋgraphᚋmodelᚐAuthor(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_authorById(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -1053,6 +1101,17 @@ func (ec *executionContext) fieldContext_Query_authorById(ctx context.Context, f
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Author", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_authorById_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -3300,9 +3359,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_authorById(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -4109,6 +4165,13 @@ func (ec *executionContext) marshalOAuthor2ᚕᚖgithubᚗcomᚋKennyTheBardᚋg
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalOAuthor2ᚖgithubᚗcomᚋKennyTheBardᚋgoᚑbooksᚑgraphqlᚑapiᚋgraphᚋmodelᚐAuthor(ctx context.Context, sel ast.SelectionSet, v *model.Author) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Author(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOBook2ᚖgithubᚗcomᚋKennyTheBardᚋgoᚑbooksᚑgraphqlᚑapiᚋgraphᚋmodelᚐBook(ctx context.Context, sel ast.SelectionSet, v *model.Book) graphql.Marshaler {

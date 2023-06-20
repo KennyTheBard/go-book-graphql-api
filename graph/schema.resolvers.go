@@ -75,18 +75,40 @@ func (r *queryResolver) Books(ctx context.Context) ([]*model.Book, error) {
 }
 
 // BookByID is the resolver for the bookById field.
-func (r *queryResolver) BookByID(ctx context.Context) (*model.Book, error) {
+func (r *queryResolver) BookByID(ctx context.Context, id int) (*model.Book, error) {
 	panic(fmt.Errorf("not implemented: BookByID - bookById"))
 }
 
 // Authors is the resolver for the authors field.
 func (r *queryResolver) Authors(ctx context.Context) ([]*model.Author, error) {
-	panic(fmt.Errorf("not implemented: Authors - authors"))
+	var authors []db.Author
+	if err := r.DB.Find(&authors).Error; err != nil {
+		return nil, err
+	}
+
+	authorModels := make([]*model.Author, len(authors))
+	for i, author := range authors {
+		authorModels[i] = &model.Author{
+			ID:          author.ID,
+			Name:        author.Name,
+			DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+		}
+	}
+	return authorModels, nil
 }
 
 // AuthorByID is the resolver for the authorById field.
-func (r *queryResolver) AuthorByID(ctx context.Context) (*model.Author, error) {
-	panic(fmt.Errorf("not implemented: AuthorByID - authorById"))
+func (r *queryResolver) AuthorByID(ctx context.Context, id int) (*model.Author, error) {
+	var author db.Author
+	if err := r.DB.First(&author, id).Error; err != nil {
+		return nil, err
+	}
+
+	return &model.Author{
+		ID:          author.ID,
+		Name:        author.Name,
+		DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

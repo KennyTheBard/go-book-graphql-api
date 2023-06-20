@@ -16,9 +16,9 @@ type Author {
 
 type Query {
   books: [Book!]!
-  bookById: Book
+  bookById(id: ID!): Book
   authors: [Author!]
-  authorById: Author!
+  authorById(id: ID!): Author
 }
 
 input NewBook {
