@@ -10,8 +10,10 @@ import (
 	"time"
 
 	"github.com/KennyTheBard/go-books-graphql-api/db"
+	"github.com/KennyTheBard/go-books-graphql-api/graph/dataloaders"
 	"github.com/KennyTheBard/go-books-graphql-api/graph/model"
 	"github.com/KennyTheBard/go-books-graphql-api/utils"
+	"github.com/graph-gophers/dataloader/v6"
 )
 
 // CreateBook is the resolver for the createBook field.
@@ -71,12 +73,71 @@ func (r *mutationResolver) CreateAuthor(ctx context.Context, input model.NewAuth
 
 // Books is the resolver for the books field.
 func (r *queryResolver) Books(ctx context.Context) ([]*model.Book, error) {
-	panic(fmt.Errorf("not implemented: Books - books"))
+	var books []db.Book
+	if err := r.DB.Find(&books).Error; err != nil {
+		return nil, err
+	}
+
+	authorIds := make([]dataloader.Key, len(books))
+	for index, book := range books {
+		authorIds[index] = dataloader.StringKey(fmt.Sprintf("%v", book.AuthorID))
+	}
+
+	loaders := dataloaders.GetLoaders(ctx)
+	getAuthors := loaders.AuthorLoader.LoadMany(ctx, authorIds)
+	results, errs := getAuthors()
+	for _, err := range errs {
+		if err != nil {
+			return nil, err
+		}
+	}
+	authors := make([]*db.Author, len(results))
+	for index, author := range results {
+		authors[index] = author.(*db.Author)
+	}
+
+	bookModels := make([]*model.Book, len(books))
+	for index, book := range books {
+		author := authors[index]
+		bookModels[index] = &model.Book{
+			ID:          book.ID,
+			Title:       book.Title,
+			PublishDate: book.PublishDate.Format(utils.JavascriptDateTimeFormat),
+			Author: &model.Author{
+				ID:          author.ID,
+				Name:        author.Name,
+				DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+			},
+		}
+	}
+	return bookModels, nil
 }
 
 // BookByID is the resolver for the bookById field.
 func (r *queryResolver) BookByID(ctx context.Context, id int) (*model.Book, error) {
-	panic(fmt.Errorf("not implemented: BookByID - bookById"))
+	var book db.Book
+	if err := r.DB.First(&book, id).Error; err != nil {
+		return nil, err
+	}
+
+	loaders := dataloaders.GetLoaders(ctx)
+	getBook := loaders.AuthorLoader.Load(ctx, dataloader.StringKey(fmt.Sprintf("%v", book.AuthorID)))
+	result, err := getBook()
+	if err != nil {
+		return nil, err
+	}
+
+	author := result.(*db.Author)
+	return &model.Book{
+		ID:          book.ID,
+		Title:       book.Title,
+		PublishDate: book.PublishDate.Format(utils.JavascriptDateTimeFormat),
+		Author: &model.Author{
+			ID:          author.ID,
+			Name:        author.Name,
+			DateOfBirth: author.DateOfBirth.Format(utils.JavascriptDateTimeFormat),
+		},
+	}, nil
 }
 
 // Authors is the resolver for the authors field.
