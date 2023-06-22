@@ -14,6 +14,7 @@ import (
 	"github.com/KennyTheBard/go-books-graphql-api/graph/model"
 	"github.com/KennyTheBard/go-books-graphql-api/utils"
 	"github.com/graph-gophers/dataloader/v6"
+	"go.uber.org/zap"
 )
 
 // CreateBook is the resolver for the createBook field.
@@ -64,6 +65,7 @@ func (r *mutationResolver) CreateAuthor(ctx context.Context, input model.NewAuth
 		return nil, err
 	}
 
+	r.Logger.Info("Created Author", zap.Any("author", *author))
 	return &model.Author{
 		ID:          author.ID,
 		Name:        author.Name,
